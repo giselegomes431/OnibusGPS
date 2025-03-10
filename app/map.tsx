@@ -34,6 +34,17 @@ export default function MapScreen() {
           longitudeDelta: 0.01,
         }}
       />
+
+      {/* Barra inferior */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.footerButton}>
+          <Ionicons name="home" size={24} color="white" />
+          <Text style={styles.footerText}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerButton}>
+          <Ionicons name="map" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
