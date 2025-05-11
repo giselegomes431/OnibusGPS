@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  TextInput,
   FlatList,
   Platform,
 } from "react-native";
@@ -12,14 +11,42 @@ import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 
+// Pontos fixos de ônibus
+const pontosDeOnibus = [
+  {
+    nome: "Ginásio de Esportes",
+    coordenadas: { latitude: -13.8666252, longitude: -40.0732742 },
+  },
+  {
+    nome: "Praça da Bandeira",
+    coordenadas: { latitude: -13.8594096, longitude: -40.0796964 },
+  },
+  {
+    nome: "Feirinha",
+    coordenadas: { latitude: -13.8613995, longitude: -40.0788123 },
+  },
+];
+
+const calcularDistancia = (lat1, lon1, lat2, lon2) => {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function MapScreen() {
   const [location, setLocation] = useState(null);
-  const [search, setSearch] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [distancia, setDistancia] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [showPontos, setShowPontos] = useState(false);
+  const [pontoSelecionado, setPontoSelecionado] = useState(null);
   const mapRef = useRef(null);
 
-  // Pega localização inicial
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -38,65 +65,44 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // Função de busca ao apertar o botão de lupa
-  const handleSearch = async () => {
-    if (!search) return;
-  
-    const viewbox = "-40.0,-15.0,-38.0,-14.0"; // exemplo
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-      search
-    )}&format=json&addressdetails=1&limit=10&viewbox=${viewbox}&bounded=1`;
-  
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "MeuAppGPS/1.0 (contato@exemplo.com)",
-          "Accept-Language": "pt-BR",
-        },
-      });
-  
-      if (!res.ok) {
-        console.log("Erro na resposta da API:", res.status);
-        return;
-      }
-  
-      const data = await res.json();
-  
-      if (data.length === 0) {
-        console.log("Nenhum resultado encontrado");
-      }
-  
-      setSuggestions(data);
-    } catch (error) {
-      console.error("Erro na busca:", error.message);
-    }
-  };
-  
+  const handleSelecionarPonto = (ponto) => {
+    console.log("Selecionado: ", ponto.nome); // Log para verificar se o ponto foi selecionado corretamente
 
-  // Seleciona sugestão
-  const handleSelectLocation = (item) => {
-    const newLocation = {
-      latitude: parseFloat(item.lat),
-      longitude: parseFloat(item.lon),
-    };
-    setLocation(newLocation);
-    setSearch(item.display_name);
-    setSuggestions([]);
+    if (currentLocation) {
+      const dist = calcularDistancia(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        ponto.coordenadas.latitude,
+        ponto.coordenadas.longitude
+      );
+
+      let distanciaFormatada =
+        dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(2)} km`;
+
+      setDistancia({ nome: ponto.nome, valor: distanciaFormatada });
+    }
+
+    setLocation(ponto.coordenadas);
+    setPontoSelecionado(ponto.nome); // Atualiza o ponto selecionado
 
     mapRef.current?.animateToRegion(
       {
-        ...newLocation,
+        ...ponto.coordenadas,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       },
       1000
     );
+
+    setShowPontos(false); // Esconde a lista de pontos de ônibus após a seleção
   };
 
-  // Voltar para localização atual
   const handleGoToCurrentLocation = () => {
     if (currentLocation) {
       setLocation(currentLocation);
+      setPontoSelecionado(null); // Limpar seleção de ponto
+      setDistancia(null);
+
       mapRef.current?.animateToRegion(
         {
           ...currentLocation,
@@ -108,9 +114,18 @@ export default function MapScreen() {
     }
   };
 
+  const handleMapPress = () => {
+    setPontoSelecionado(null);
+    setDistancia(null);
+  };
+
+  // Verifica a mudança no ponto selecionado
+  useEffect(() => {
+    console.log("Ponto Selecionado: ", pontoSelecionado); // Log para verificar mudanças no ponto selecionado
+  }, [pontoSelecionado]);
+
   return (
     <View style={styles.container}>
-      {/* Cabeçalho */}
       <View style={styles.header}>
         <TouchableOpacity>
           <Ionicons name="menu" size={28} color="white" />
@@ -121,54 +136,44 @@ export default function MapScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Campo de busca */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Para onde deseja ir?"
-            value={search}
-            onChangeText={setSearch}
-          />
-          <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
-            <Ionicons name="search" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={() => setShowPontos(!showPontos)}
+        >
+          <Text style={styles.searchText}>Escolha o ponto de ônibus</Text>
+        </TouchableOpacity>
 
-        {/* Sugestões */}
-        {suggestions.length > 0 && (
+        {showPontos && (
           <FlatList
-            data={suggestions}
-            keyExtractor={(item) => item.place_id.toString()}
+            data={pontosDeOnibus}
+            keyExtractor={(item) => item.nome}
             style={styles.suggestionList}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.suggestionItem}
-                onPress={() => handleSelectLocation(item)}
-              >
-                <Ionicons
-                  name="location-outline"
-                  size={20}
-                  color="#666"
-                  style={{ marginRight: 10 }}
-                />
-                <View>
-                  <Text style={styles.primaryText}>
-                    {item.address?.road || item.display_name.split(",")[0]}
+            renderItem={({ item }) => {
+              const isSelected = pontoSelecionado === item.nome;
+              return (
+                <TouchableOpacity
+                  style={[styles.suggestionItem, isSelected && { backgroundColor: "#e0f7e9" }]}
+                  onPress={() => handleSelecionarPonto(item)}
+                >
+                  <Ionicons
+                    name="location-outline"
+                    size={20}
+                    color={isSelected ? "green" : "#666"}
+                    style={{ marginRight: 10 }}
+                  />
+                  <Text
+                    style={[styles.primaryText, isSelected && { color: "green", fontWeight: "bold" }]}
+                  >
+                    {item.nome}
                   </Text>
-                  <Text style={styles.secondaryText}>
-                    {item.address?.city ||
-                      item.address?.town ||
-                      item.display_name.split(",").slice(1).join(",")}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
+                </TouchableOpacity>
+              );
+            }}
           />
         )}
       </View>
 
-      {/* Mapa */}
       {location && (
         <MapView
           ref={mapRef}
@@ -180,12 +185,39 @@ export default function MapScreen() {
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           }}
+          onPress={handleMapPress}
         >
-          <Marker coordinate={location} title="Local Atual ou Selecionado" />
+          {currentLocation && (
+            <Marker
+              coordinate={currentLocation}
+              title="Você está aqui"
+              pinColor="red"
+            />
+          )}
+
+          {pontosDeOnibus.map((ponto, index) => {
+            const isSelected = pontoSelecionado === ponto.nome; // Verificar se o ponto está selecionado
+            return (
+              <Marker
+                key={index}
+                coordinate={ponto.coordenadas}
+                title={ponto.nome}
+                pinColor={isSelected ? "green" : "blue"} // Coloca o pin verde se o ponto for selecionado
+                onPress={() => handleSelecionarPonto(ponto)}
+              />
+            );
+          })}
         </MapView>
       )}
 
-      {/* Botão voltar para localização atual */}
+      {distancia && (
+        <View style={styles.distanciaBox}>
+          <Text style={styles.distanciaText}>
+            Distância até {distancia.nome}: {distancia.valor}
+          </Text>
+        </View>
+      )}
+
       <TouchableOpacity
         style={styles.gpsButton}
         onPress={handleGoToCurrentLocation}
@@ -221,22 +253,16 @@ const styles = StyleSheet.create({
     padding: 8,
     elevation: 5,
   },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#f0f0f0",
-  },
   searchButton: {
     backgroundColor: "green",
-    padding: 10,
+    padding: 15,
     borderRadius: 5,
-    marginLeft: 8,
+    alignItems: "center",
+  },
+  searchText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   suggestionList: {
     marginTop: 5,
@@ -257,10 +283,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
   },
-  secondaryText: {
-    fontSize: 12,
-    color: "#777",
-  },
   map: {
     flex: 1,
   },
@@ -272,5 +294,21 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 50,
     elevation: 5,
+  },
+  distanciaBox: {
+    position: "absolute",
+    bottom: 90,
+    left: 20,
+    right: 20,
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 10,
+    elevation: 5,
+    alignItems: "center",
+  },
+  distanciaText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
   },
 });
