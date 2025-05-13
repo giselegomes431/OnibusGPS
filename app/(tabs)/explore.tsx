@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import {
   View,
   StyleSheet,
@@ -12,14 +14,32 @@ import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function MapScreen() {
-  const [location, setLocation] = useState(null);
-  const [search, setSearch] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const mapRef = useRef(null);
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
 
-  // Pega localização inicial
+type Suggestion = {
+  place_id: string;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    road?: string;
+    city?: string;
+    town?: string;
+  };
+};
+
+export default function MapScreen() {
+  const [location, setLocation] = useState<Coordinates | null>(null);
+  const [search, setSearch] = useState<string>("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
+  const mapRef = useRef<MapView | null>(null);
+
+  const insets = useSafeAreaInsets(); // <- aqui
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -38,15 +58,14 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // Função de busca ao apertar o botão de lupa
   const handleSearch = async () => {
     if (!search) return;
-  
-    const viewbox = "-40.0,-15.0,-38.0,-14.0"; // exemplo
+
+    const viewbox = "-40.0,-15.0,-38.0,-14.0";
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
       search
     )}&format=json&addressdetails=1&limit=10&viewbox=${viewbox}&bounded=1`;
-  
+
     try {
       const res = await fetch(url, {
         headers: {
@@ -54,28 +73,30 @@ export default function MapScreen() {
           "Accept-Language": "pt-BR",
         },
       });
-  
+
       if (!res.ok) {
         console.log("Erro na resposta da API:", res.status);
         return;
       }
-  
-      const data = await res.json();
-  
+
+      const data: Suggestion[] = await res.json();
+
       if (data.length === 0) {
         console.log("Nenhum resultado encontrado");
       }
-  
+
       setSuggestions(data);
-    } catch (error) {
-      console.error("Erro na busca:", error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Erro na busca:", error.message);
+      } else {
+        console.error("Erro desconhecido na busca");
+      }
     }
   };
-  
 
-  // Seleciona sugestão
-  const handleSelectLocation = (item) => {
-    const newLocation = {
+  const handleSelectLocation = (item: Suggestion) => {
+    const newLocation: Coordinates = {
       latitude: parseFloat(item.lat),
       longitude: parseFloat(item.lon),
     };
@@ -93,7 +114,6 @@ export default function MapScreen() {
     );
   };
 
-  // Voltar para localização atual
   const handleGoToCurrentLocation = () => {
     if (currentLocation) {
       setLocation(currentLocation);
@@ -110,8 +130,8 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho */}
-      <View style={styles.header}>
+      {/* Cabeçalho com paddingTop dinâmico */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity>
           <Ionicons name="menu" size={28} color="white" />
         </TouchableOpacity>
@@ -135,7 +155,6 @@ export default function MapScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Sugestões */}
         {suggestions.length > 0 && (
           <FlatList
             data={suggestions}
@@ -168,7 +187,6 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Mapa */}
       {location && (
         <MapView
           ref={mapRef}
@@ -185,7 +203,6 @@ export default function MapScreen() {
         </MapView>
       )}
 
-      {/* Botão voltar para localização atual */}
       <TouchableOpacity
         style={styles.gpsButton}
         onPress={handleGoToCurrentLocation}
@@ -203,7 +220,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "green",
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingBottom: 10,
   },
   headerText: {
     color: "white",
@@ -212,7 +230,8 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 80 : 70,
+    top: Platform.OS === "ios" ? 100 : 0,
+    marginVertical: 80,
     width: "90%",
     alignSelf: "center",
     zIndex: 1,
@@ -265,12 +284,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gpsButton: {
-    position: "absolute",
-    bottom: 30,
+    position: 'absolute',
+    bottom: 100, // Acima da tab bar
     right: 20,
-    backgroundColor: "green",
-    padding: 12,
+    zIndex: 1000,
+    backgroundColor: '#127234',
     borderRadius: 50,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 });
