@@ -6,10 +6,13 @@ import {
   TouchableOpacity,
   FlatList,
   Platform,
+  Image,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
+import Entypo from "@expo/vector-icons/Entypo";
 
 // Pontos fixos de ônibus
 const pontosDeOnibus = [
@@ -46,6 +49,7 @@ export default function MapScreen() {
   const [showPontos, setShowPontos] = useState(false);
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
   const mapRef = useRef(null);
+  const [mostrarTituloUsuario, setMostrarTituloUsuario] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -62,6 +66,8 @@ export default function MapScreen() {
       };
       setLocation(coords);
       setCurrentLocation(coords);
+      setMostrarTituloUsuario(true); // <-- Mostra "Você está aqui"
+      setTimeout(() => setMostrarTituloUsuario(false), 3000); // Esconde após 3s
     })();
   }, []);
 
@@ -100,8 +106,10 @@ export default function MapScreen() {
   const handleGoToCurrentLocation = () => {
     if (currentLocation) {
       setLocation(currentLocation);
-      setPontoSelecionado(null); // Limpar seleção de ponto
+      setPontoSelecionado(null);
       setDistancia(null);
+      setMostrarTituloUsuario(true); // <-- Mostra "Você está aqui"
+      setTimeout(() => setMostrarTituloUsuario(false), 3000); // Esconde após 3s
 
       mapRef.current?.animateToRegion(
         {
@@ -127,13 +135,7 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity>
-          <Ionicons name="menu" size={28} color="white" />
-        </TouchableOpacity>
         <Text style={styles.headerText}>Mapa</Text>
-        <TouchableOpacity>
-          <Ionicons name="person-circle" size={28} color="white" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -153,7 +155,10 @@ export default function MapScreen() {
               const isSelected = pontoSelecionado === item.nome;
               return (
                 <TouchableOpacity
-                  style={[styles.suggestionItem, isSelected && { backgroundColor: "#e0f7e9" }]}
+                  style={[
+                    styles.suggestionItem,
+                    isSelected && { backgroundColor: "#e0f7e9" },
+                  ]}
                   onPress={() => handleSelecionarPonto(item)}
                 >
                   <Ionicons
@@ -163,7 +168,10 @@ export default function MapScreen() {
                     style={{ marginRight: 10 }}
                   />
                   <Text
-                    style={[styles.primaryText, isSelected && { color: "green", fontWeight: "bold" }]}
+                    style={[
+                      styles.primaryText,
+                      isSelected && { color: "green", fontWeight: "bold" },
+                    ]}
                   >
                     {item.nome}
                   </Text>
@@ -188,33 +196,69 @@ export default function MapScreen() {
           onPress={handleMapPress}
         >
           {currentLocation && (
-            <Marker
-              coordinate={currentLocation}
-              title="Você está aqui"
-              pinColor="red"
-            />
+            <Marker coordinate={currentLocation}>
+              <View
+                style={{
+                  height: -30,
+                  width: 35,
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Entypo
+                  name="location-pin"
+                  size={39}
+                  color="#E53935" // cor fixa desejada
+                  style={{ marginBottom: -6 }}
+                />
+              </View>
+            </Marker>
           )}
 
           {pontosDeOnibus.map((ponto, index) => {
-            const isSelected = pontoSelecionado === ponto.nome; // Verificar se o ponto está selecionado
+            const isSelected = pontoSelecionado === ponto.nome;
             return (
               <Marker
                 key={index}
                 coordinate={ponto.coordenadas}
-                title={ponto.nome}
-                pinColor={isSelected ? "green" : "blue"} // Coloca o pin verde se o ponto for selecionado
                 onPress={() => handleSelecionarPonto(ponto)}
-              />
+              >
+                <View
+                  style={{
+                    height: -30, // altura total garantida
+                    width: 35,
+                    alignItems: "center",
+                    justifyContent: "flex-end", // garante que o ícone fique embaixo
+                  }}
+                >
+                  <Entypo
+                    name="location-pin"
+                    size={39}
+                    color={pontoSelecionado === ponto.nome ? "#127234" : "#666"}
+                    style={{ marginBottom: -6 }}
+                  />
+                </View>
+              </Marker>
             );
           })}
         </MapView>
       )}
 
+      {pontoSelecionado && (
+        <View style={styles.pontoBox}>
+          <Text style={styles.pontoText}>{pontoSelecionado}</Text>
+        </View>
+      )}
+
+      {mostrarTituloUsuario && (
+        <View style={styles.pontoBox}>
+          <Text style={styles.pontoText}>Você está aqui</Text>
+        </View>
+      )}
+
       {distancia && (
         <View style={styles.distanciaBox}>
-          <Text style={styles.distanciaText}>
-            Distância até {distancia.nome}: {distancia.valor}
-          </Text>
+          <Text style={styles.distanciaText}>Distância: {distancia.valor}</Text>
         </View>
       )}
 
@@ -234,13 +278,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "green",
+    backgroundColor: "#127234",
     padding: 15,
+    height: 80,
   },
   headerText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+    justifyContent: "center",
+    marginLeft: 140,
+    marginTop: 20,
   },
   searchContainer: {
     position: "absolute",
@@ -252,9 +300,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 8,
     elevation: 5,
+    marginTop: 20,
   },
   searchButton: {
-    backgroundColor: "green",
+    backgroundColor: "#127234",
     padding: 15,
     borderRadius: 5,
     alignItems: "center",
@@ -288,12 +337,20 @@ const styles = StyleSheet.create({
   },
   gpsButton: {
     position: "absolute",
-    bottom: 30,
+    bottom: 100, // Acima da tab bar
     right: 20,
-    backgroundColor: "green",
-    padding: 12,
+    zIndex: 1000,
+    backgroundColor: "#127234",
     borderRadius: 50,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   distanciaBox: {
     position: "absolute",
@@ -305,10 +362,31 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 5,
     alignItems: "center",
+    marginBottom: 20,
+    width: 150,
+    justifyContent: "center",
   },
   distanciaText: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#333",
+  },
+  pontoBox: {
+    position: "absolute",
+    bottom: 150, // acima do botão GPS
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 10,
+    elevation: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 250,
+    alignSelf: "center", // <- centraliza horizontalmente
+    marginBottom: 30,
+  },
+  pontoText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#127234",
   },
 });

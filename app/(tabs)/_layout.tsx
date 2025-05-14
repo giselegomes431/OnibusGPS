@@ -1,99 +1,88 @@
-import { Ionicons } from '@expo/vector-icons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import Entypo from '@expo/vector-icons/Entypo';
-import { Tabs } from 'expo-router';
+import { Tabs } from "expo-router";
+import { Platform, View, TouchableOpacity } from "react-native";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#127234',
-        tabBarInactiveTintColor: 'white',
-        tabBarStyle: {
-          backgroundColor: '#127234', // Fundo da barra
-          height: 70, // Altura da barra
-          borderTopLeftRadius: 40, // Bordas arredondadas
-          borderTopRightRadius: 40,
-          paddingBottom: 10, // Espaço inferior
-          paddingTop: 5,
-          marginTop: -40,
-          
-        },
-        tabBarLabelStyle: {
-          fontSize: 12, // Tamanho da fonte
-          fontWeight: '600', // Peso da fonte
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons
-              name="chart-timeline-variant"
-              size={28}
-              color={color}
-              style={{
-                backgroundColor: focused ? 'white' : 'transparent',
-                borderRadius: 20,
-                marginTop: 15,
-                padding: 5,
-                width: 80,
-                height: 50,
-                paddingLeft: 26,
-              }}
-            />
-          ),
-          headerShown: false,
+    <>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: "#127234",
+          tabBarInactiveTintColor: "white",
+          tabBarStyle: {
+            position: "absolute",
+            bottom: 20,
+            left: "50%",
+            width: 250,
+            marginLeft: 55,
+            backgroundColor: "#127234",
+            borderRadius: 30,
+            height: 70,
+            paddingBottom: Platform.OS === "ios" ? 20 : 10,
+            paddingTop: 5,
+            zIndex: 999,
+            elevation: 10,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+          },
         }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Mapa',
-          tabBarIcon: ({ color, focused }) => (
-            <Entypo
-              name="home"
-              size={28}
-              color={color}
-              style={{
-                backgroundColor: focused ? 'white' : 'transparent', 
-                borderRadius: 20,
-                marginTop: 15,
-                padding: 5,
-                width: 80,
-                height: 50,
-                paddingLeft: 26,
-              }}
-            />
-          ),
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="weather"
-        options={{
-          title: 'Clima',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name="cloud"
-              size={28}
-              color={color}
-              style={{
-                backgroundColor: focused ? 'white' : 'transparent',
-                borderRadius: 20,
-                marginTop: 15,
-                padding: 5,
-                width: 80,
-                height: 50,
-                paddingLeft: 26,
-              }}
-            />
-          ),
-          headerShown: false,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="explore"
+          options={{
+            title: "Mapa",
+            tabBarIcon: ({ color, focused }) => (
+              <FontAwesome5
+                name="map-marked-alt"
+                size={24}
+                color={color}
+                style={{
+                  backgroundColor: focused ? "white" : "transparent",
+                  borderRadius: 20,
+                  marginTop: 22,
+                  padding: 2,
+                  width: 80,
+                  height: 50,
+                  paddingLeft: 26,
+                }}
+              />
+            ),
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Horarios",
+            tabBarIcon: ({ color, focused }) => (
+              <MaterialIcons
+                name="access-time-filled"
+                size={24}
+                color={color}
+                style={{
+                  backgroundColor: focused ? "white" : "transparent",
+                  borderRadius: 20,
+                  marginTop: 22,
+                  padding: 2,
+                  width: 80,
+                  height: 50,
+                  paddingLeft: 26,
+                }}
+              />
+            ),
+            headerShown: false,
+          }}
+        />
+      </Tabs>
+    </>
   );
 }
