@@ -1,0 +1,120 @@
+import { StyleSheet, Platform } from 'react-native';
+
+export const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#127234",
+    paddingTop: Platform.OS === 'android' ? 25 : 15,
+    paddingBottom: 15,
+    height: 80,
+    zIndex: 1,
+  },
+  headerText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  backdropContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  blurView: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  searchContainer: {
+    position: "absolute",
+    top: 60,
+    width: "80%",
+    alignSelf: "center",
+    zIndex: 1, 
+    backgroundColor: "white",
+    borderRadius: 35,
+    padding: 5,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  searchButton: {
+    backgroundColor: "#127234",
+    padding: 15,
+    borderRadius: 35,
+    alignItems: "center",
+  },
+  searchText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  suggestionList: {
+    marginTop: 5,
+    maxHeight: 300,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 0,
+    borderBottomColor: "#eee",
+  },
+  primaryText: {
+    fontWeight: "bold",
+    fontSize: 14,
+    color: "#333",
+  },
+
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gpsButton: {
+    position: "absolute",
+    bottom: 100,
+    right: 20,
+    zIndex: 1,
+    backgroundColor: "#127234",
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+  },
+  distanciaBox: {
+    position: "absolute",
+    bottom: 110,
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 10,
+    elevation: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  distanciaText: {
+    fontSize: 14,
+  },
+  pontoBox: {
+    position: "absolute",
+    bottom: 160,
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 10,
+    elevation: 5,
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  pontoText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#127234",
+  },
+});
